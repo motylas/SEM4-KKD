@@ -163,27 +163,91 @@ public class LZW {
         return decodedNumbers;
     }
 
+    public static List<String> fibbE(List<Integer> numbersToEncode){
+        List<String> encodedNumbers = new ArrayList<>();
+        while(!numbersToEncode.isEmpty()){
+            StringBuilder output = new StringBuilder();
+            int number = numbersToEncode.remove(0);
+            int n = 2;
+            int fib = 1;
+            while (true){
+                int temp;
+                if ((temp = fibbNumber(n+1)) > number){
+                    break;
+                }
+                n++;
+                fib = temp;
+            }
+            output.append("0".repeat(Math.max(0, n - 1)));
+            output.setCharAt(n-2,'1');
+            output.append('1');
+            number -= fib;
+            while (true){
+                if (number == 0) break;
+                n = 2;
+                fib = 1;
+                while (true){
+                    int temp;
+                    if ((temp = fibbNumber(n+1)) > number){
+                        break;
+                    }
+                    n++;
+                    fib = temp;
+                }
+                output.setCharAt(n-2,'1');
+                number -= fib;
+            }
+            encodedNumbers.add(output.toString());
+        }
+        return encodedNumbers;
+    }
+
+    public static List<Integer> fibbD(List<String> numbersToDecode){
+        List<Integer> decodedNumbers = new ArrayList<>();
+        while(!numbersToDecode.isEmpty()){
+            String number = numbersToDecode.remove(0);
+            number = number.substring(0,number.length()-1);
+            int output = 0;
+            int index = 0;
+            for(char character: number.toCharArray()){
+                if (character == '1'){
+                    output += fibbNumber(index+2);
+                }
+                index++;
+            }
+            decodedNumbers.add(output);
+        }
+        return decodedNumbers;
+    }
     private static double log2(int number) {
         return Math.log(number) / Math.log(2);
     }
 
+    private static int fibbNumber(int n){
+        if (n == 0) return 0;
+        if (n == 1) return 1;
+        if (n == 2) return 1;
+        return fibbNumber(n-1) + fibbNumber(n-2);
+    }
+
     public static void main(String[] args) {
-        List<Integer> compressed = lzwE("abababab");
-        System.out.println(compressed);
-        var code = eliasDE(compressed);
-        System.out.println(code);
-        var decode = eliasDD(code);
-        System.out.println(decode);
-        String decompressed = lzwD(decode);
-        System.out.println(decompressed);
-//        List<Integer> test = new ArrayList<>();
-//        test.add(5);
-//        test.add(3);
-//        test.add(15);
-//        test.add(12);
-//        test.add(17);
-//        var x = eliasDE(test);
-//        System.out.println(x);
-//        System.out.println(eliasDD(x));
+//        List<Integer> compressed = lzwE("abababab");
+//        System.out.println(compressed);
+//        var code = eliasDE(compressed);
+//        System.out.println(code);
+//        var decode = eliasDD(code);
+//        System.out.println(decode);
+//        String decompressed = lzwD(decode);
+//        System.out.println(decompressed);
+        List<Integer> test = new ArrayList<>();
+        test.add(5);
+        test.add(3);
+        test.add(11);
+        test.add(12);
+        test.add(1);
+        test.add(14);
+        var x = fibbE(test);
+        System.out.println(x);
+        System.out.println(fibbD(x));
     }
 }
