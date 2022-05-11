@@ -1,7 +1,4 @@
-import java.io.DataInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,8 +8,9 @@ import java.util.*;
 public class LZW {
     final static int dictUTF = 1112064;
     final static int dictASCII = 256;
+
     public static List<Integer> lzwE(String text) {
-        int dictSize  = dictASCII;
+        int dictSize = dictASCII;
         Map<String, Integer> dictionary = new HashMap<>();
         for (int i = 0; i < dictSize; i++) {
             dictionary.put(String.valueOf((char) i), i);
@@ -81,18 +79,24 @@ public class LZW {
     }
 
     public static List<Integer> eliasOD(String input) {
+//        System.out.println(input);
         List<Integer> decodedNumbers = new ArrayList<>();
         while (!input.isEmpty()) {
             int n = 1;
-            while (input.charAt(0) == '1') {
-                int len = n;
-                n = 0;
-                String temp = input.substring(0, len + 1);
-                n = Integer.parseInt(temp, 2);
-                input = input.substring(len + 1);
+            try {
+                while (input.charAt(0) == '1') {
+                    int len = n;
+                    n = 0;
+                    String temp = input.substring(0, len + 1);
+                    n = Integer.parseInt(temp, 2);
+                    input = input.substring(len + 1);
+                }
+                input = input.substring(1);
+                if (n > -1)
+                    decodedNumbers.add(n);
+            } catch (Exception e) {
+                return decodedNumbers;
             }
-            input = input.substring(1);
-            decodedNumbers.add(n);
         }
         return decodedNumbers;
     }
@@ -114,34 +118,21 @@ public class LZW {
         List<Integer> decodedNumbers = new ArrayList<>();
         while (!input.isEmpty()) {
             int n = 1;
-            while (input.charAt(0) != '1') {
-                input = input.substring(1);
-                n++;
+            try {
+                while (input.charAt(0) != '1') {
+                    input = input.substring(1);
+                    n++;
+                }
+                String temp = input.substring(0, n);
+                int output = Integer.parseInt(temp, 2);
+                decodedNumbers.add(output);
+                input = input.substring(n);
+            } catch (Exception e) {
+                return decodedNumbers;
             }
-            String temp = input.substring(0, n);
-            int output = Integer.parseInt(temp, 2);
-            decodedNumbers.add(output);
-            input = input.substring(n);
         }
         return decodedNumbers;
     }
-
-//    public static List<Integer> eliasGD(List<String> numbersToDecode) {
-//        List<Integer> decodedNumbers = new ArrayList<>();
-//        while (!numbersToDecode.isEmpty()) {
-//            String number = numbersToDecode.remove(0);
-//            int n = 1;
-//            while (number.charAt(0) != '1') {
-//                number = number.substring(1);
-//                n++;
-//            }
-//            String temp = number.substring(0, n);
-//            System.out.println(number.substring(n));
-//            int output = Integer.parseInt(temp, 2);
-//            decodedNumbers.add(output);
-//        }
-//        return decodedNumbers;
-//    }
 
     public static List<String> eliasDE(List<Integer> numbersToEncode) {
         List<String> encodedNumbers = new ArrayList<>();
@@ -171,24 +162,29 @@ public class LZW {
         return encodedNumbers;
     }
 
-    public static List<Integer> eliasDD(List<String> numbersToDecode) {
+    public static List<Integer> eliasDD(String input) {
         List<Integer> decodedNumbers = new ArrayList<>();
-        while (!numbersToDecode.isEmpty()) {
-            String number = numbersToDecode.remove(0);
-            int l = 1;
-            while (number.charAt(0) == '0') {
-                number = number.substring(1);
-                l++;
+        while (!input.isEmpty()) {
+            try {
+                int l = 1;
+                while (input.charAt(0) == '0') {
+                    input = input.substring(1);
+                    l++;
+                }
+                String temp = input.substring(0, l);
+                input = input.substring(l);
+                int n = Integer.parseInt(temp, 2) - 1;
+                int output = Integer.parseInt(input.substring(0, n), 2);
+                input = input.substring(n);
+                output += Math.pow(2, n);
+                decodedNumbers.add(output);
+            } catch (Exception e) {
+                return decodedNumbers;
             }
-            String temp = number.substring(0, l);
-            number = number.substring(l);
-            int n = Integer.parseInt(temp, 2) - 1;
-            int output = Integer.parseInt(number.substring(0, n), 2);
-            output += Math.pow(2, n);
-            decodedNumbers.add(output);
         }
         return decodedNumbers;
     }
+
 
     public static List<String> fibbE(List<Integer> numbersToEncode) {
         List<String> encodedNumbers = new ArrayList<>();
@@ -229,20 +225,38 @@ public class LZW {
         return encodedNumbers;
     }
 
-    public static List<Integer> fibbD(List<String> numbersToDecode) {
+    public static List<Integer> fibbD(String input) {
         List<Integer> decodedNumbers = new ArrayList<>();
-        while (!numbersToDecode.isEmpty()) {
-            String number = numbersToDecode.remove(0);
-            number = number.substring(0, number.length() - 1);
-            int output = 0;
-            int index = 0;
-            for (char character : number.toCharArray()) {
-                if (character == '1') {
-                    output += fibbNumber(index + 2);
+        while (!input.isEmpty()) {
+            try {
+                char lastChar = '2';
+                String number = "";
+                int counter = 0;
+                for (char character : input.toCharArray()) {
+                    if (character == '1' && lastChar == '1') {
+                        number = input.substring(0, counter);
+                        try {
+                            input = input.substring(counter + 1);
+                        } catch (Exception e) {
+                            input = "";
+                        }
+                        break;
+                    }
+                    lastChar = character;
+                    counter++;
                 }
-                index++;
+                int output = 0;
+                int index = 0;
+                for (char character : number.toCharArray()) {
+                    if (character == '1') {
+                        output += fibbNumber(index + 2);
+                    }
+                    index++;
+                }
+                decodedNumbers.add(output);
+            } catch (Exception e){
+                return decodedNumbers;
             }
-            decodedNumbers.add(output);
         }
         return decodedNumbers;
     }
@@ -258,42 +272,783 @@ public class LZW {
         return fibbNumber(n - 1) + fibbNumber(n - 2);
     }
 
-//    public static void main(String[] args) throws IOException {
-//        Path path = Paths.get("C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\testy1\\pan-tadeusz.txt");
-//        byte[] data = Files.readAllBytes(path);
-//        String test = new String(data, StandardCharsets.US_ASCII);
-//        List<Integer> compressed = lzwE(test);
-////        List<String> coded = eliasDE(compressed);
-////        for (String word: coded){
-////
-////        }
-//    }
+    static double countEntropy(HashMap<Integer, Integer> map, int codeLength){
+        double entropy = 0;
+        for(Map.Entry<Integer, Integer> entry: map.entrySet()){
+            int value = entry.getValue();
+            entropy += value*(-1)*Math.log10(value);
+        }
+        entropy = entropy/(Math.log10(2)*codeLength)+Math.log10(codeLength)/Math.log10(2);
+        return entropy;
+    }
+
 
     public static void main(String[] args) throws IOException {
-        long start = System.currentTimeMillis();
+        System.out.println("PAN TADEUSZ");
+        HashMap<Integer, Integer> pt1 = new HashMap<>();
+        HashMap<Integer, Integer> pteO = new HashMap<>();
+        HashMap<Integer, Integer> pteG = new HashMap<>();
+        HashMap<Integer, Integer> pteD = new HashMap<>();
+        HashMap<Integer, Integer> ptfi = new HashMap<>();
         String fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\testy1\\pan-tadeusz.txt";
         DataInputStream inputStream = new DataInputStream(new FileInputStream(fileName));
         int byteRead = -1;
-        int codeLength = 0;
+        int codeLength1 = 0;
         Integer count = null;
         StringBuilder input = new StringBuilder();
         while ((byteRead = inputStream.read()) != -1) {
-            codeLength++;
+            codeLength1++;
+            if ((count = pt1.putIfAbsent(byteRead,1)) != null){
+                pt1.put(byteRead,count + 1);
+            }
             input.append((char) byteRead);
         }
-        List<Integer> x = lzwE(input.toString());
-        var y = eliasGE(x);
-        System.out.println("Ys");
-        StringBuilder all = new StringBuilder();
-        for (String st: y){
-            all.append(st);
-//            System.out.println(st);
-        }
-        System.out.println("YS2");
-        var z = eliasGD(all.toString());
-        System.out.println("YS3");
-        System.out.println(lzwD(z));
+        System.out.println("Długość pliku wejściowego: " + codeLength1);
+        System.out.println("Entropia pliku wejściowego: " + countEntropy(pt1, codeLength1));
+        long start = System.currentTimeMillis();
+        List<Integer> eD = lzwE(input.toString());
+        List<Integer> eG = new ArrayList<>();
+        List<Integer> eO = new ArrayList<>();
+        List<Integer> f = new ArrayList<>();
         long end = System.currentTimeMillis();
-        System.out.println((end-start));
+        System.out.println("Czas kodowania LZW w ms: " + (end - start));
+        for (int n: eD){
+            eG.add(n);
+            eO.add(n);
+            f.add(n);
+        }
+        // Elias Delta
+        start = System.currentTimeMillis();
+        List<String> eDout = eliasDE(eD);
+        StringBuilder sb = new StringBuilder();
+        for (String st: eDout)  sb.append(st);
+        FileOperator.out(sb.toString(), "pteliasD.txt");
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania Eliasa Delta z zapisem do pliku w s" + (end - start)/1000);
+
+        // Elias Gamma
+        start = System.currentTimeMillis();
+        List<String> eGout = eliasGE(eG);
+        sb = new StringBuilder();
+        for (String st: eGout)  sb.append(st);
+        FileOperator.out(sb.toString(), "pteliasG.txt");
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania Eliasa Gamma z zapisem do pliku w s" + (end - start)/1000);
+
+        // Elias Omega
+        start = System.currentTimeMillis();
+        List<String> eOout = eliasOE(eO);
+        sb = new StringBuilder();
+        for (String st: eOout)  sb.append(st);
+        FileOperator.out(sb.toString(), "pteliasO.txt");
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania Eliasa Omega z zapisem do pliku w s" + (end - start)/1000);
+
+        // Fibbonacci
+        start = System.currentTimeMillis();
+        List<String> fout = fibbE(f);
+        sb = new StringBuilder();
+        for (String st: fout)  sb.append(st);
+        FileOperator.out(sb.toString(), "ptfibb.txt");
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania Fibbonacciego z zapisem do pliku w s" + (end - start)/1000);
+
+        // Elias Delta Decode
+        start = System.currentTimeMillis();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\Lista3\\pteliasD.txt";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        input = new StringBuilder();
+        int codeLengthED = 0;
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLengthED++;
+            if ((count = pteD.putIfAbsent(byteRead,1)) != null){
+                pteD.put(byteRead,count + 1);
+            }
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (byteRead % 2 == 1) {
+                    temp.insert(0, "1");
+                } else {
+                    temp.insert(0, "0");
+                }
+                byteRead /= 2;
+            }
+            input.append(temp);
+        }
+        List<Integer> lzwDecode = eliasDD(input.toString());
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania Eliasa Delta z odczytem z pliku w s: " + (end-start)/1000);
+        System.out.println("Długość pliku zakodowanego: " + codeLengthED);
+        System.out.println("Entropia pliku zakodowanego: " + countEntropy(pteD, codeLengthED));
+        System.out.println("Procent kompresji: " + (codeLengthED * 100.0 /codeLength1) + "%");
+
+        // Elias Gamma Decode
+        start = System.currentTimeMillis();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\Lista3\\pteliasG.txt";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        input = new StringBuilder();
+        int codeLengthEG = 0;
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLengthEG++;
+            if ((count = pteG.putIfAbsent(byteRead,1)) != null){
+                pteG.put(byteRead,count + 1);
+            }
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (byteRead % 2 == 1) {
+                    temp.insert(0, "1");
+                } else {
+                    temp.insert(0, "0");
+                }
+                byteRead /= 2;
+            }
+            input.append(temp);
+        }
+        eliasGD(input.toString());
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania Eliasa Gamma z odczytem z pliku w s: " + (end-start)/1000);
+        System.out.println("Długość pliku zakodowanego: " + codeLengthEG);
+        System.out.println("Entropia pliku zakodowanego: " + countEntropy(pteG, codeLengthEG));
+        System.out.println("Procent kompresji: " + (codeLengthEG * 100.0 /codeLength1) + "%");
+
+        // Elias Omega Decode
+        start = System.currentTimeMillis();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\Lista3\\pteliasO.txt";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        input = new StringBuilder();
+        int codeLengthEO = 0;
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLengthEO++;
+            if ((count = pteO.putIfAbsent(byteRead,1)) != null){
+                pteO.put(byteRead,count + 1);
+            }
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (byteRead % 2 == 1) {
+                    temp.insert(0, "1");
+                } else {
+                    temp.insert(0, "0");
+                }
+                byteRead /= 2;
+            }
+            input.append(temp);
+        }
+        eliasOD(input.toString());
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania Eliasa Omega z odczytem z pliku w s: " + (end-start)/1000);
+        System.out.println("Długość pliku zakodowanego: " + codeLengthEO);
+        System.out.println("Entropia pliku zakodowanego: " + countEntropy(pteO, codeLengthEO));
+        System.out.println("Procent kompresji: " + (codeLengthEO * 100.0 /codeLength1) + "%");
+
+        // Fibbonacci Decode
+        start = System.currentTimeMillis();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\Lista3\\ptfibb.txt";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        input = new StringBuilder();
+        int codeLengthF = 0;
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLengthF++;
+            if ((count = ptfi.putIfAbsent(byteRead,1)) != null){
+                ptfi.put(byteRead,count + 1);
+            }
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (byteRead % 2 == 1) {
+                    temp.insert(0, "1");
+                } else {
+                    temp.insert(0, "0");
+                }
+                byteRead /= 2;
+            }
+            input.append(temp);
+        }
+        fibbD(input.toString());
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania fibbonacciego z odczytem z pliku w s: " + (end-start)/1000);
+        System.out.println("Długość pliku zakodowanego: " + codeLengthF);
+        System.out.println("Entropia pliku zakodowanego: " + countEntropy(ptfi, codeLengthF));
+        System.out.println("Procent kompresji: " + (codeLengthF * 100.0 /codeLength1) + "%");
+
+        // LZW Decode
+        start = System.currentTimeMillis();
+        lzwD(lzwDecode);
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania LZW w ms: " + (end-start));
+
+
+        System.out.println("Test1");
+        HashMap<Integer, Integer> t1 = new HashMap<>();
+        HashMap<Integer, Integer> t1eO = new HashMap<>();
+        HashMap<Integer, Integer> t1eG = new HashMap<>();
+        HashMap<Integer, Integer> t1eD = new HashMap<>();
+        HashMap<Integer, Integer> t1fi = new HashMap<>();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\testy1\\test1.bin";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        byteRead = -1;
+        codeLength1 = 0;
+        input = new StringBuilder();
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLength1++;
+            if ((count = t1.putIfAbsent(byteRead,1)) != null){
+                t1.put(byteRead,count + 1);
+            }
+            input.append((char) byteRead);
+        }
+        System.out.println("Długość pliku wejściowego: " + codeLength1);
+        System.out.println("Entropia pliku wejściowego: " + countEntropy(pt1, codeLength1));
+        start = System.currentTimeMillis();
+        eD = lzwE(input.toString());
+        eG = new ArrayList<>();
+        eO = new ArrayList<>();
+        f = new ArrayList<>();
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania LZW w ms: " + (end - start));
+        for (int n: eD){
+            eG.add(n);
+            eO.add(n);
+            f.add(n);
+        }
+        // Elias Delta
+        start = System.currentTimeMillis();;
+        eDout = eliasDE(eD);
+        sb = new StringBuilder();
+        for (String st: eDout)  sb.append(st);
+        FileOperator.out(sb.toString(), "t1eliasD.txt");
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania Eliasa Delta z zapisem do pliku w s" + (end - start)/1000);
+
+        // Elias Gamma
+        start = System.currentTimeMillis();
+        eGout = eliasGE(eG);
+        sb = new StringBuilder();
+        for (String st: eGout)  sb.append(st);
+        FileOperator.out(sb.toString(), "t1eliasG.txt");
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania Eliasa Gamma z zapisem do pliku w s" + (end - start)/1000);
+
+        // Elias Omega
+        start = System.currentTimeMillis();
+        eOout = eliasOE(eO);
+        sb = new StringBuilder();
+        for (String st: eOout)  sb.append(st);
+        FileOperator.out(sb.toString(), "t1eliasO.txt");
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania Eliasa Omega z zapisem do pliku w s" + (end - start)/1000);
+
+        // Fibbonacci
+        start = System.currentTimeMillis();
+        fout = fibbE(f);
+        sb = new StringBuilder();
+        for (String st: fout)  sb.append(st);
+        FileOperator.out(sb.toString(), "t1fibb.txt");
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania Fibbonacciego z zapisem do pliku w s" + (end - start)/1000);
+
+        // Elias Delta Decode
+        start = System.currentTimeMillis();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\Lista3\\t1eliasD.txt";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        input = new StringBuilder();
+        codeLengthED = 0;
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLengthED++;
+            if ((count = t1eD.putIfAbsent(byteRead,1)) != null){
+                t1eD.put(byteRead,count + 1);
+            }
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (byteRead % 2 == 1) {
+                    temp.insert(0, "1");
+                } else {
+                    temp.insert(0, "0");
+                }
+                byteRead /= 2;
+            }
+            input.append(temp);
+        }
+        lzwDecode = eliasDD(input.toString());
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania Eliasa Delta z odczytem z pliku w s: " + (end-start)/1000);
+        System.out.println("Długość pliku zakodowanego: " + codeLengthED);
+        System.out.println("Entropia pliku zakodowanego: " + countEntropy(pteD, codeLengthED));
+        System.out.println("Procent kompresji: " + (codeLengthED * 100.0 /codeLength1) + "%");
+
+        // Elias Gamma Decode
+        start = System.currentTimeMillis();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\Lista3\\t1eliasG.txt";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        input = new StringBuilder();
+        codeLengthEG = 0;
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLengthEG++;
+            if ((count = t1eG.putIfAbsent(byteRead,1)) != null){
+                t1eG.put(byteRead,count + 1);
+            }
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (byteRead % 2 == 1) {
+                    temp.insert(0, "1");
+                } else {
+                    temp.insert(0, "0");
+                }
+                byteRead /= 2;
+            }
+            input.append(temp);
+        }
+        eliasGD(input.toString());
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania Eliasa Gamma z odczytem z pliku w s: " + (end-start)/1000);
+        System.out.println("Długość pliku zakodowanego: " + codeLengthEG);
+        System.out.println("Entropia pliku zakodowanego: " + countEntropy(pteG, codeLengthEG));
+        System.out.println("Procent kompresji: " + (codeLengthEG * 100.0 /codeLength1) + "%");
+
+        // Elias Omega Decode
+        start = System.currentTimeMillis();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\Lista3\\t1eliasO.txt";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        input = new StringBuilder();
+        codeLengthEO = 0;
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLengthEO++;
+            if ((count = t1eO.putIfAbsent(byteRead,1)) != null){
+                t1eO.put(byteRead,count + 1);
+            }
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (byteRead % 2 == 1) {
+                    temp.insert(0, "1");
+                } else {
+                    temp.insert(0, "0");
+                }
+                byteRead /= 2;
+            }
+            input.append(temp);
+        }
+        eliasOD(input.toString());
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania Eliasa Omega z odczytem z pliku w s: " + (end-start)/1000);
+        System.out.println("Długość pliku zakodowanego: " + codeLengthEO);
+        System.out.println("Entropia pliku zakodowanego: " + countEntropy(pteO, codeLengthEO));
+        System.out.println("Procent kompresji: " + (codeLengthEO * 100.0 /codeLength1) + "%");
+
+        // Fibbonacci Decode
+        start = System.currentTimeMillis();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\Lista3\\t1fibb.txt";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        input = new StringBuilder();
+        codeLengthF = 0;
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLengthF++;
+            if ((count = t1fi.putIfAbsent(byteRead,1)) != null){
+                t1fi.put(byteRead,count + 1);
+            }
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (byteRead % 2 == 1) {
+                    temp.insert(0, "1");
+                } else {
+                    temp.insert(0, "0");
+                }
+                byteRead /= 2;
+            }
+            input.append(temp);
+        }
+        fibbD(input.toString());
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania fibbonacciego z odczytem z pliku w s: " + (end-start)/1000);
+        System.out.println("Długość pliku zakodowanego: " + codeLengthF);
+        System.out.println("Entropia pliku zakodowanego: " + countEntropy(ptfi, codeLengthF));
+        System.out.println("Procent kompresji: " + (codeLengthF * 100.0 /codeLength1) + "%");
+
+        // LZW Decode
+        start = System.currentTimeMillis();
+        lzwD(lzwDecode);
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania LZW w ms: " + (end-start));
+
+
+
+        System.out.println("Test2");
+        HashMap<Integer, Integer> t2 = new HashMap<>();
+        HashMap<Integer, Integer> t2eO = new HashMap<>();
+        HashMap<Integer, Integer> t2eG = new HashMap<>();
+        HashMap<Integer, Integer> t2eD = new HashMap<>();
+        HashMap<Integer, Integer> t2fi = new HashMap<>();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\testy1\\test2.bin";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        byteRead = -1;
+        codeLength1 = 0;
+        input = new StringBuilder();
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLength1++;
+            if ((count = t2.putIfAbsent(byteRead,1)) != null){
+                t2.put(byteRead,count + 1);
+            }
+            input.append((char) byteRead);
+        }
+        System.out.println("Długość pliku wejściowego: " + codeLength1);
+        System.out.println("Entropia pliku wejściowego: " + countEntropy(pt1, codeLength1));
+        start = System.currentTimeMillis();
+        eD = lzwE(input.toString());
+        eG = new ArrayList<>();
+        eO = new ArrayList<>();
+        f = new ArrayList<>();
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania LZW w ms: " + (end - start));
+        for (int n: eD){
+            eG.add(n);
+            eO.add(n);
+            f.add(n);
+        }
+        // Elias Delta
+        start = System.currentTimeMillis();;
+        eDout = eliasDE(eD);
+        sb = new StringBuilder();
+        for (String st: eDout)  sb.append(st);
+        FileOperator.out(sb.toString(), "t2eliasD.txt");
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania Eliasa Delta z zapisem do pliku w s" + (end - start)/1000);
+
+        // Elias Gamma
+        start = System.currentTimeMillis();
+        eGout = eliasGE(eG);
+        sb = new StringBuilder();
+        for (String st: eGout)  sb.append(st);
+        FileOperator.out(sb.toString(), "t2eliasG.txt");
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania Eliasa Gamma z zapisem do pliku w s" + (end - start)/1000);
+
+        // Elias Omega
+        start = System.currentTimeMillis();
+        eOout = eliasOE(eO);
+        sb = new StringBuilder();
+        for (String st: eOout)  sb.append(st);
+        FileOperator.out(sb.toString(), "t2eliasO.txt");
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania Eliasa Omega z zapisem do pliku w s" + (end - start)/1000);
+
+        // Fibbonacci
+        start = System.currentTimeMillis();
+        fout = fibbE(f);
+        sb = new StringBuilder();
+        for (String st: fout)  sb.append(st);
+        FileOperator.out(sb.toString(), "t2fibb.txt");
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania Fibbonacciego z zapisem do pliku w s" + (end - start)/1000);
+
+        // Elias Delta Decode
+        start = System.currentTimeMillis();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\Lista3\\t2eliasD.txt";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        input = new StringBuilder();
+        codeLengthED = 0;
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLengthED++;
+            if ((count = t2eD.putIfAbsent(byteRead,1)) != null){
+                t2eD.put(byteRead,count + 1);
+            }
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (byteRead % 2 == 1) {
+                    temp.insert(0, "1");
+                } else {
+                    temp.insert(0, "0");
+                }
+                byteRead /= 2;
+            }
+            input.append(temp);
+        }
+        lzwDecode = eliasDD(input.toString());
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania Eliasa Delta z odczytem z pliku w s: " + (end-start)/1000);
+        System.out.println("Długość pliku zakodowanego: " + codeLengthED);
+        System.out.println("Entropia pliku zakodowanego: " + countEntropy(pteD, codeLengthED));
+        System.out.println("Procent kompresji: " + (codeLengthED * 100.0 /codeLength1) + "%");
+
+        // Elias Gamma Decode
+        start = System.currentTimeMillis();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\Lista3\\t2eliasG.txt";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        input = new StringBuilder();
+        codeLengthEG = 0;
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLengthEG++;
+            if ((count = t2eG.putIfAbsent(byteRead,1)) != null){
+                t2eG.put(byteRead,count + 1);
+            }
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (byteRead % 2 == 1) {
+                    temp.insert(0, "1");
+                } else {
+                    temp.insert(0, "0");
+                }
+                byteRead /= 2;
+            }
+            input.append(temp);
+        }
+        eliasGD(input.toString());
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania Eliasa Gamma z odczytem z pliku w s: " + (end-start)/1000);
+        System.out.println("Długość pliku zakodowanego: " + codeLengthEG);
+        System.out.println("Entropia pliku zakodowanego: " + countEntropy(pteG, codeLengthEG));
+        System.out.println("Procent kompresji: " + (codeLengthEG * 100.0 /codeLength1) + "%");
+
+        // Elias Omega Decode
+        start = System.currentTimeMillis();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\Lista3\\t2eliasO.txt";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        input = new StringBuilder();
+        codeLengthEO = 0;
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLengthEO++;
+            if ((count = t2eO.putIfAbsent(byteRead,1)) != null){
+                t2eO.put(byteRead,count + 1);
+            }
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (byteRead % 2 == 1) {
+                    temp.insert(0, "1");
+                } else {
+                    temp.insert(0, "0");
+                }
+                byteRead /= 2;
+            }
+            input.append(temp);
+        }
+        eliasOD(input.toString());
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania Eliasa Omega z odczytem z pliku w s: " + (end-start)/1000);
+        System.out.println("Długość pliku zakodowanego: " + codeLengthEO);
+        System.out.println("Entropia pliku zakodowanego: " + countEntropy(pteO, codeLengthEO));
+        System.out.println("Procent kompresji: " + (codeLengthEO * 100.0 /codeLength1) + "%");
+
+        // Fibbonacci Decode
+        start = System.currentTimeMillis();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\Lista3\\t2fibb.txt";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        input = new StringBuilder();
+        codeLengthF = 0;
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLengthF++;
+            if ((count = t2fi.putIfAbsent(byteRead,1)) != null){
+                t2fi.put(byteRead,count + 1);
+            }
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (byteRead % 2 == 1) {
+                    temp.insert(0, "1");
+                } else {
+                    temp.insert(0, "0");
+                }
+                byteRead /= 2;
+            }
+            input.append(temp);
+        }
+        fibbD(input.toString());
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania fibbonacciego z odczytem z pliku w s: " + (end-start)/1000);
+        System.out.println("Długość pliku zakodowanego: " + codeLengthF);
+        System.out.println("Entropia pliku zakodowanego: " + countEntropy(ptfi, codeLengthF));
+        System.out.println("Procent kompresji: " + (codeLengthF * 100.0 /codeLength1) + "%");
+
+        // LZW Decode
+        start = System.currentTimeMillis();
+        lzwD(lzwDecode);
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania LZW w ms: " + (end-start));
+
+
+
+
+        System.out.println("Test3");
+        HashMap<Integer, Integer> t3 = new HashMap<>();
+        HashMap<Integer, Integer> t3eO = new HashMap<>();
+        HashMap<Integer, Integer> t3eG = new HashMap<>();
+        HashMap<Integer, Integer> t3eD = new HashMap<>();
+        HashMap<Integer, Integer> t3fi = new HashMap<>();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\testy1\\test3.bin";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        byteRead = -1;
+        codeLength1 = 0;
+        input = new StringBuilder();
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLength1++;
+            if ((count = t3.putIfAbsent(byteRead,1)) != null){
+                t3.put(byteRead,count + 1);
+            }
+            input.append((char) byteRead);
+        }
+        System.out.println("Długość pliku wejściowego: " + codeLength1);
+        System.out.println("Entropia pliku wejściowego: " + countEntropy(pt1, codeLength1));
+        start = System.currentTimeMillis();
+        eD = lzwE(input.toString());
+        eG = new ArrayList<>();
+        eO = new ArrayList<>();
+        f = new ArrayList<>();
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania LZW w ms: " + (end - start));
+        for (int n: eD){
+            eG.add(n);
+            eO.add(n);
+            f.add(n);
+        }
+        // Elias Delta
+        start = System.currentTimeMillis();;
+        eDout = eliasDE(eD);
+        sb = new StringBuilder();
+        for (String st: eDout)  sb.append(st);
+        FileOperator.out(sb.toString(), "t3eliasD.txt");
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania Eliasa Delta z zapisem do pliku w s" + (end - start)/1000);
+
+        // Elias Gamma
+        start = System.currentTimeMillis();
+        eGout = eliasGE(eG);
+        sb = new StringBuilder();
+        for (String st: eGout)  sb.append(st);
+        FileOperator.out(sb.toString(), "t3eliasG.txt");
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania Eliasa Gamma z zapisem do pliku w s" + (end - start)/1000);
+
+        // Elias Omega
+        start = System.currentTimeMillis();
+        eOout = eliasOE(eO);
+        sb = new StringBuilder();
+        for (String st: eOout)  sb.append(st);
+        FileOperator.out(sb.toString(), "t3eliasO.txt");
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania Eliasa Omega z zapisem do pliku w s" + (end - start)/1000);
+
+        // Fibbonacci
+        start = System.currentTimeMillis();
+        fout = fibbE(f);
+        sb = new StringBuilder();
+        for (String st: fout)  sb.append(st);
+        FileOperator.out(sb.toString(), "t3fibb.txt");
+        end = System.currentTimeMillis();
+        System.out.println("Czas kodowania Fibbonacciego z zapisem do pliku w s" + (end - start)/1000);
+
+        // Elias Delta Decode
+        start = System.currentTimeMillis();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\Lista3\\t3eliasD.txt";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        input = new StringBuilder();
+        codeLengthED = 0;
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLengthED++;
+            if ((count = t3eD.putIfAbsent(byteRead,1)) != null){
+                t3eD.put(byteRead,count + 1);
+            }
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (byteRead % 2 == 1) {
+                    temp.insert(0, "1");
+                } else {
+                    temp.insert(0, "0");
+                }
+                byteRead /= 2;
+            }
+            input.append(temp);
+        }
+        lzwDecode = eliasDD(input.toString());
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania Eliasa Delta z odczytem z pliku w s: " + (end-start)/1000);
+        System.out.println("Długość pliku zakodowanego: " + codeLengthED);
+        System.out.println("Entropia pliku zakodowanego: " + countEntropy(pteD, codeLengthED));
+        System.out.println("Procent kompresji: " + (codeLengthED * 100.0 /codeLength1) + "%");
+
+        // Elias Gamma Decode
+        start = System.currentTimeMillis();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\Lista3\\t3eliasG.txt";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        input = new StringBuilder();
+        codeLengthEG = 0;
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLengthEG++;
+            if ((count = t3eG.putIfAbsent(byteRead,1)) != null){
+                t3eG.put(byteRead,count + 1);
+            }
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (byteRead % 2 == 1) {
+                    temp.insert(0, "1");
+                } else {
+                    temp.insert(0, "0");
+                }
+                byteRead /= 2;
+            }
+            input.append(temp);
+        }
+        eliasGD(input.toString());
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania Eliasa Gamma z odczytem z pliku w s: " + (end-start)/1000);
+        System.out.println("Długość pliku zakodowanego: " + codeLengthEG);
+        System.out.println("Entropia pliku zakodowanego: " + countEntropy(pteG, codeLengthEG));
+        System.out.println("Procent kompresji: " + (codeLengthEG * 100.0 /codeLength1) + "%");
+
+        // Elias Omega Decode
+        start = System.currentTimeMillis();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\Lista3\\t3eliasO.txt";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        input = new StringBuilder();
+        codeLengthEO = 0;
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLengthEO++;
+            if ((count = t3eO.putIfAbsent(byteRead,1)) != null){
+                t3eO.put(byteRead,count + 1);
+            }
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (byteRead % 2 == 1) {
+                    temp.insert(0, "1");
+                } else {
+                    temp.insert(0, "0");
+                }
+                byteRead /= 2;
+            }
+            input.append(temp);
+        }
+        eliasOD(input.toString());
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania Eliasa Omega z odczytem z pliku w s: " + (end-start)/1000);
+        System.out.println("Długość pliku zakodowanego: " + codeLengthEO);
+        System.out.println("Entropia pliku zakodowanego: " + countEntropy(pteO, codeLengthEO));
+        System.out.println("Procent kompresji: " + (codeLengthEO * 100.0 /codeLength1) + "%");
+
+        // Fibbonacci Decode
+        start = System.currentTimeMillis();
+        fileName = "C:\\Users\\hgrud\\Documents\\GitHub\\SEM4-KKD\\Lista3\\t3fibb.txt";
+        inputStream = new DataInputStream(new FileInputStream(fileName));
+        input = new StringBuilder();
+        codeLengthF = 0;
+        while ((byteRead = inputStream.read()) != -1) {
+            codeLengthF++;
+            if ((count = t3fi.putIfAbsent(byteRead,1)) != null){
+                t3fi.put(byteRead,count + 1);
+            }
+            StringBuilder temp = new StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (byteRead % 2 == 1) {
+                    temp.insert(0, "1");
+                } else {
+                    temp.insert(0, "0");
+                }
+                byteRead /= 2;
+            }
+            input.append(temp);
+        }
+        fibbD(input.toString());
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania fibbonacciego z odczytem z pliku w s: " + (end-start)/1000);
+        System.out.println("Długość pliku zakodowanego: " + codeLengthF);
+        System.out.println("Entropia pliku zakodowanego: " + countEntropy(ptfi, codeLengthF));
+        System.out.println("Procent kompresji: " + (codeLengthF * 100.0 /codeLength1) + "%");
+
+        // LZW Decode
+        start = System.currentTimeMillis();
+        lzwD(lzwDecode);
+        end = System.currentTimeMillis();
+        System.out.println("Czas dekodowania LZW w ms: " + (end-start));
     }
 }
